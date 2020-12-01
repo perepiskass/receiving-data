@@ -137,7 +137,7 @@ TEST_F(receiverFixture, call_text_bin_callback)
     receiver->Receive(data, 20);
 }
 
-TEST_F(receiverFixture, call_Receive_same_times_for_bin)
+TEST_F(receiverFixture, call_Receive_twice_for_bin)
 {
     char header = 0x24;
     char data_1[10] = {header, 0x0b, 0x00, 0x00, 0x00, 'h', 'e', 'l', 'l', 'o'};
@@ -149,7 +149,7 @@ TEST_F(receiverFixture, call_Receive_same_times_for_bin)
     receiver->Receive(data_2, 6);
 }
 
-TEST_F(receiverFixture, call_Receive_same_times_for_text)
+TEST_F(receiverFixture, call_Receive_twice_for_text)
 {
     char header = 'T';
     char data_1[6] = {header, 'h', 'e', 'l', 'l', 'o'};
