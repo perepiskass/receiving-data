@@ -1,7 +1,6 @@
 #include "receiver.h"
 #include <algorithm>
 #include <stdexcept>
-#include <inttypes.h>
 
 void Receiver::Receive(const char* data, std::size_t size)
 {
@@ -38,8 +37,8 @@ void Receiver::TextReceive(size_t size)
         it += 4;
         if(it != m_data.end())
         {
-            // m_data.erase(std::copy(it, std::end(m_data), std::begin(m_data)), std::end(m_data));    //лишнее копирование, но если не урезать то может быть вектор огромен
             m_data.erase(m_data.begin(), it);
+
             if(CheckHandler(m_data.front()))
                 TextReceive(m_data.size());
             else
@@ -61,12 +60,6 @@ uint32_t Receiver::ToBigEndian(const std::vector<char>& vec) const
     return res;
 }
 
-// uint32_t Receiver::ToBig(const std::vector<char>& vec) const
-// {
-
-// }
-
-
 void Receiver::BinReceive()
 {
     if(m_data.size() > 4)
@@ -79,8 +72,8 @@ void Receiver::BinReceive()
                 m_data.clear();
             else
             {
-                // m_data.erase(std::copy(m_data.begin() + 5 + size, m_data.end(), m_data.begin()), std::end(m_data));    //лишнее копирование, но если не урезать то может быть вектор огромен
                 m_data.erase(m_data.begin(), m_data.begin() + 5 + size);
+
                 if(CheckHandler(m_data.front()))
                     TextReceive(m_data.size());
                 else
