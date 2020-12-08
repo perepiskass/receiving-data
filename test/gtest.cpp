@@ -87,7 +87,7 @@ class MockCallback : public ICallback {
 // TestFixture--------------------------------------------------------------------------------
 struct receiverFixture : public testing::Test {
     // Per-test-suite set-up.
-    MockCallback mock_callback;
+    MockCallback* mock_callback = nullptr;
     IReceiver* receiver = nullptr;
 
     static void SetUpTestSuite() {
@@ -95,12 +95,14 @@ struct receiverFixture : public testing::Test {
     static void TearDownTestSuite() {
     }
 
-    void SetUp() override {
-        delete receiver;
-        receiver = new Receiver(std::unique_ptr<ICallback>(&mock_callback));
+    void SetUp() override 
+    {
+        mock_callback = new MockCallback();
+        receiver = new Receiver(std::unique_ptr<ICallback>(mock_callback));
      }
-    void TearDown() override {
-        // delete receiver;
+    void TearDown() override 
+    {
+        delete receiver;
     }
 };
 //--------------------------------------------------------------------------------------------
@@ -110,7 +112,7 @@ TEST_F(receiverFixture, call_text_callback)
     char header = 'T';
     char data[10] = {header,'h', 'e', 'l', 'l', 'o', '\r', '\n', '\r', '\n'};
 
-    EXPECT_CALL(mock_callback, TextPacket(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(*mock_callback, TextPacket(_, _)).Times(AtLeast(1));
 
     receiver->Receive(data, 10);
 }
@@ -120,7 +122,7 @@ TEST_F(receiverFixture, call_bin_callback)
     char header = 0x24;
     char data[10] = {header, 0x05, 0x00, 0x00, 0x00, 'o', '\r', '\n', '\r', '\n'};
 
-    EXPECT_CALL(mock_callback, BinaryPacket(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(*mock_callback, BinaryPacket(_, _)).Times(AtLeast(1));
 
     receiver->Receive(data, 10);
 }
@@ -132,8 +134,8 @@ TEST_F(receiverFixture, call_text_bin_callback)
     char data[20] = {header_bin, 0x05, 0x00, 0x00, 0x00, 'h', 'e', 'l', 'l', 'o',
                     header_text,'h', 'e', 'l', 'l', 'o', '\r', '\n', '\r', '\n'};
 
-    EXPECT_CALL(mock_callback, BinaryPacket(_, _)).Times(AtLeast(1));
-    EXPECT_CALL(mock_callback, TextPacket(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(*mock_callback, BinaryPacket(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(*mock_callback, TextPacket(_, _)).Times(AtLeast(1));
 
     receiver->Receive(data, 20);
 }
@@ -144,7 +146,7 @@ TEST_F(receiverFixture, call_Receive_twice_for_bin)
     char data_1[10] = {header, 0x0b, 0x00, 0x00, 0x00, 'h', 'e', 'l', 'l', 'o'};
     char data_2[6] = {' ','w','o','r','l','d'};
 
-    EXPECT_CALL(mock_callback, BinaryPacket(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(*mock_callback, BinaryPacket(_, _)).Times(AtLeast(1));
 
     receiver->Receive(data_1, 10);
     receiver->Receive(data_2, 6);
@@ -156,7 +158,7 @@ TEST_F(receiverFixture, call_Receive_twice_for_text)
     char data_1[6] = {header, 'h', 'e', 'l', 'l', 'o'};
     char data_2[10] = {' ','w','o','r','l','d','\r', '\n', '\r', '\n'};
 
-    EXPECT_CALL(mock_callback, TextPacket(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(*mock_callback, TextPacket(_, _)).Times(AtLeast(1));
 
     receiver->Receive(data_1, 6);
     receiver->Receive(data_2, 10);
@@ -170,8 +172,8 @@ TEST_F(receiverFixture, one_block_two_bin_callback)
                     header_text,'h', 'e', 'l', 'l', 'o', '\r','\n', '\r', '\n',
                     header_bin,0x03, 0x00, 0x00, 0x00,'y','e','s'};
 
-    EXPECT_CALL(mock_callback, BinaryPacket(_, _)).Times(AtLeast(2));
-    EXPECT_CALL(mock_callback, TextPacket(_, 5)).Times(AtLeast(1));
+    EXPECT_CALL(*mock_callback, BinaryPacket(_, _)).Times(AtLeast(2));
+    EXPECT_CALL(*mock_callback, TextPacket(_, 5)).Times(AtLeast(1));
 
     receiver->Receive(data, 28);
 }
@@ -184,8 +186,8 @@ TEST_F(receiverFixture, one_block_two_text_callback)
                     header_bin,0x03, 0x00, 0x00, 0x00,'y','e','s',
                     header_text,'f','e','r','r','a','r','i','\r','\n','\r','\n'};
 
-    EXPECT_CALL(mock_callback, BinaryPacket(_, 3)).Times(AtLeast(1));
-    EXPECT_CALL(mock_callback, TextPacket(_, _)).Times(AtLeast(2));
+    EXPECT_CALL(*mock_callback, BinaryPacket(_, 3)).Times(AtLeast(1));
+    EXPECT_CALL(*mock_callback, TextPacket(_, _)).Times(AtLeast(2));
 
     receiver->Receive(data, 30);
 }
@@ -198,7 +200,7 @@ TEST_F(receiverFixture, text_callback_equal_size)
     char data_1[13] = {header, 'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd','\r',};
     char data_2[3] = {'\n','\r','\n'};
 
-    EXPECT_CALL(mock_callback, TextPacket(_, size)).Times(AtLeast(1));
+    EXPECT_CALL(*mock_callback, TextPacket(_, size)).Times(AtLeast(1));
 
     receiver->Receive(data_1, 13);
     receiver->Receive(data_2, 3);
@@ -216,7 +218,7 @@ TEST_F(receiverFixture, bin_callback_equal_size)
     bin_data[3] = 0x00;
     bin_data[4] = 0x00;
 
-    EXPECT_CALL(mock_callback, BinaryPacket(_, 1024)).Times(AtLeast(1));
+    EXPECT_CALL(*mock_callback, BinaryPacket(_, 1024)).Times(AtLeast(1));
 
     receiver->Receive(bin_data.data(), 3);
     receiver->Receive(bin_data.data() + 3, 1026);
@@ -227,6 +229,7 @@ TEST_F(receiverFixture, bin_callback_max_size)
     char header = 0x24;
     unsigned char max = 0xff;
     std::vector<char> bin_data;
+    uint32_t max_size = std::numeric_limits<uint32_t>::max();
      
 
     bin_data.push_back(header);
@@ -237,7 +240,7 @@ TEST_F(receiverFixture, bin_callback_max_size)
     bin_data.push_back(max);
     bin_data.resize(4294967300);
 
-    EXPECT_CALL(mock_callback, BinaryPacket(_, std::numeric_limits<uint32_t>::max())).Times(AtLeast(1));
+    EXPECT_CALL(*mock_callback, BinaryPacket(_, max_size)).Times(AtLeast(1));
 
     receiver->Receive(bin_data.data() , 4294967300);
 }
