@@ -6,7 +6,9 @@ void Receiver::Receive(const char* data, std::size_t size)
 {
     if(size && data != nullptr)
     {
+      
         m_data.insert(m_data.end(), data, data + size);
+    
         if(CheckHandler(m_data.front()))
             TextReceive(size);
         else
@@ -52,6 +54,7 @@ void Receiver::TextReceive(size_t size)
 uint32_t Receiver::ToBigEndian(const std::vector<char>& vec) const
 {
     uint32_t res = 0;
+
     for(size_t i = 0; i < 4; ++i)
     {
         uint32_t value = static_cast<unsigned char>(vec[i+1]);

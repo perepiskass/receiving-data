@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include "receiver.h"
+#include <limits>
 
 
 TEST(receiver_test_case, create_receiver)
@@ -170,7 +171,7 @@ TEST_F(receiverFixture, one_block_two_bin_callback)
                     header_bin,0x03, 0x00, 0x00, 0x00,'y','e','s'};
 
     EXPECT_CALL(mock_callback, BinaryPacket(_, _)).Times(AtLeast(2));
-    EXPECT_CALL(mock_callback, TextPacket(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(mock_callback, TextPacket(_, 5)).Times(AtLeast(1));
 
     receiver->Receive(data, 28);
 }
@@ -183,7 +184,7 @@ TEST_F(receiverFixture, one_block_two_text_callback)
                     header_bin,0x03, 0x00, 0x00, 0x00,'y','e','s',
                     header_text,'f','e','r','r','a','r','i','\r','\n','\r','\n'};
 
-    EXPECT_CALL(mock_callback, BinaryPacket(_, _)).Times(AtLeast(1));
+    EXPECT_CALL(mock_callback, BinaryPacket(_, 3)).Times(AtLeast(1));
     EXPECT_CALL(mock_callback, TextPacket(_, _)).Times(AtLeast(2));
 
     receiver->Receive(data, 30);
@@ -221,6 +222,25 @@ TEST_F(receiverFixture, bin_callback_equal_size)
     receiver->Receive(bin_data.data() + 3, 1026);
 }
 
+TEST_F(receiverFixture, bin_callback_max_size)
+{
+    char header = 0x24;
+    unsigned char max = 0xff;
+    std::vector<char> bin_data;
+     
+
+    bin_data.push_back(header);
+    // 4294967295 little endian
+    bin_data.push_back(max);
+    bin_data.push_back(max);
+    bin_data.push_back(max);
+    bin_data.push_back(max);
+    bin_data.resize(4294967300);
+
+    EXPECT_CALL(mock_callback, BinaryPacket(_, std::numeric_limits<uint32_t>::max())).Times(AtLeast(1));
+
+    receiver->Receive(bin_data.data() , 4294967300);
+}
 
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
